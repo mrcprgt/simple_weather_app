@@ -20,7 +20,7 @@ class _HomeState extends State<Home> {
 
   String address;
   var geocodeFromInput;
-  var currentLocation;
+  LatLng currentLocation;
 
   bool pressed = false;
 
@@ -47,15 +47,22 @@ class _HomeState extends State<Home> {
                 print(status);
                 if (status.isUndetermined) {
                   Permission.location.request();
+                  await geolocator
+                      .getCurrentPosition()
+                      .then((value) => currentLocation =
+                          new LatLng(value.latitude, value.longitude))
+                      .then((value) => Navigator.of(context)
+                          .pushNamed('/mapscreen', arguments: currentLocation));
                 }
                 if (status.isDenied) {
                   Navigator.of(context).pop();
                 }
                 if (status.isGranted) {
-                  await geolocator
-                      .getCurrentPosition()
-                      .then((value) => print(value));
-                  Navigator.of(context).pop();
+                  await geolocator.getCurrentPosition().then((value) =>
+                      currentLocation =
+                          new LatLng(value.latitude, value.longitude));
+                  Navigator.of(context)
+                      .pushNamed('/mapscreen', arguments: currentLocation);
                 }
               },
             ),
