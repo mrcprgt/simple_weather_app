@@ -9,6 +9,13 @@
         android:name="io.flutter.app.FlutterApplication"
         android:label="simple_weather_app"
         android:icon="@mipmap/ic_launcher">
+
+
+        <!--API KEY-->
+        <meta-data
+           android:name="com.google.android.geo.API_KEY"
+           android:value="AIzaSyDfOf4OtTT-WADpHP1Atov1c0uPe5T2qSs"/>
+
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
@@ -26,5 +33,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+       
+    
     </application>
 </manifest>
