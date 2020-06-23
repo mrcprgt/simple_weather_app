@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:simple_weather_app/home.dart';
+import 'package:simple_weather_app/weatherscreen.dart';
 import 'mapscreen.dart';
 
 class Router {
@@ -11,6 +12,7 @@ class Router {
     switch (settings.name) {
       case '/':
         return MaterialPageRoute(builder: (_) => Home());
+        break;
       case '/mapscreen':
         if (args is LatLng) {
           return MaterialPageRoute(
@@ -19,6 +21,17 @@ class Router {
             ),
           );
         }
+        break;
+
+      case '/weatherscreen':
+        if (args is LatLng) {
+          return MaterialPageRoute(
+            builder: (_) => WeatherScreen(
+              data: args,
+            ),
+          );
+        }
+        break;
     }
   }
 }
