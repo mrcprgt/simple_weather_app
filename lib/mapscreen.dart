@@ -15,6 +15,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    //Store coordinates and convert to a marker that is used in google maps plugin
     this.markers.add(Marker(markerId: MarkerId("pin"), position: widget.data));
   }
 
