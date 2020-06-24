@@ -15,8 +15,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   //Variables
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
+  bool error = false;
   var geolocator = Geolocator();
   String address;
   var geocodeFromInput;
@@ -26,7 +26,6 @@ class _HomeState extends State<Home> {
     return showDialog<void>(
       useRootNavigator: true,
       context: context,
-      barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Woops!'),
@@ -46,6 +45,7 @@ class _HomeState extends State<Home> {
                 print(status);
                 if (status.isUndetermined) {
                   Permission.location.request();
+                  Navigator.of(context).pop();
                   await geolocator
                       .getCurrentPosition()
                       .then((value) => currentLocation =
@@ -54,6 +54,9 @@ class _HomeState extends State<Home> {
                           .pushNamed('/mapscreen', arguments: currentLocation));
                 }
                 if (status.isDenied) {
+                  setState(() {
+                    error = true;
+                  });
                   Navigator.of(context).pop();
                 }
                 if (status.isGranted) {
@@ -78,7 +81,6 @@ class _HomeState extends State<Home> {
 
     return SafeArea(
       child: Scaffold(
-        key: _scaffoldKey,
         backgroundColor: Colors.blue[100],
         body: Container(
             padding: EdgeInsets.all(16),
@@ -91,40 +93,64 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
+                    error
+                        ? GestureDetector(
+                            onTap: () async {
+                              await Permission.location
+                                  .request()
+                                  .whenComplete(() => setState(() {
+                                        error = false;
+                                      }));
+                            },
+                            child: Card(
+                                margin: EdgeInsets.all(4),
+                                color: Colors.red[300],
+                                child: Text(
+                                    "Location services is required for this app. Tap here to enable.",
+                                    style: TextStyle(
+                                        fontSize: 24, color: Colors.black))),
+                          )
+                        : Container(),
                     Image.asset('assets/bermuda-searching.png',
                         width: MediaQuery.of(context).size.width, height: 300),
                     SizedBox(height: 20),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: new BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(32),
-                        border: Border.all(),
-
-                        //color: Colors.purple,
-                        // gradient: new LinearGradient(
-                        //   colors: [Colors.blue, Colors.red],
-                        // ),
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
                       ),
-                      child: Column(
-                        children: <Widget>[
-                          FormBuilderTextField(
-                            attribute: "brgy",
-                            decoration: InputDecoration(labelText: "Barangay"),
-                          ),
-                          FormBuilderTextField(
-                            attribute: "city",
-                            decoration: InputDecoration(labelText: "City"),
-                          ),
-                          FormBuilderTextField(
-                            attribute: "prov",
-                            decoration: InputDecoration(labelText: "Province"),
-                          ),
-                        ],
+                      margin: EdgeInsets.all(4),
+                      elevation: 10,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: <Widget>[
+                            FormBuilderTextField(
+                              attribute: "brgy",
+                              decoration:
+                                  InputDecoration(labelText: "Barangay"),
+                            ),
+                            FormBuilderTextField(
+                              attribute: "city",
+                              decoration: InputDecoration(labelText: "City"),
+                            ),
+                            FormBuilderTextField(
+                              attribute: "prov",
+                              decoration:
+                                  InputDecoration(labelText: "Province"),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                    Container(
+                      height: 25,
+                    ),
                     RaisedButton(
-                      elevation: 2,
+                      color: Colors.green[400],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      elevation: 5,
                       child: Text("Next"),
                       onPressed: () async {
                         _fbKey.currentState.saveAndValidate();
