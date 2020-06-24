@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapScreen extends StatefulWidget {
-  LatLng data;
+  final LatLng data;
 
   MapScreen({Key key, @required this.data}) : super(key: key);
 
@@ -23,7 +23,7 @@ class _MapScreenState extends State<MapScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Address"),
+          title: Text("Is this Address Correct?"),
         ),
         body: Container(
           height: MediaQuery.of(context).size.height,
