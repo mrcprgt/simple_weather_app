@@ -148,6 +148,8 @@ class _HomeState extends State<Home> {
                         //make an http request
                         var geoCodeQuery =
                             'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
+                        // var geoCodeQuery =
+                        //     'https://us1.locationiq.com/v1/search.php?key=58c2ebc4fef933&q=$address&format=json';
                         await pr.show();
 
                         if (pr.isShowing()) {
@@ -155,7 +157,6 @@ class _HomeState extends State<Home> {
 
                           var jsonData;
                           jsonData = json.decode(response.body);
-                          print(jsonData.first);
 
                           //if len = 1, user input is blank
                           if (jsonData.length == 1) {
