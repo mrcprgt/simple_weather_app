@@ -35,8 +35,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
     //Store data in a variable and serialize to list
     var addressJsonData;
     addressJsonData = json.decode(addressResponse.body);
-    print("address data: \n" + addressJsonData.length.toString());
-    //addressJsonData = addressJsonData.toList();
+    //print("address data: \n" + addressJsonData.length.toString());
+
     //store data into the variable that holds all of our data from the calls
     jsonDataList[0] = addressJsonData;
 
@@ -46,12 +46,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
     //Store data in a variable and serialize to list
     var weatherJsonData;
     weatherJsonData = json.decode(weatherResponse.body);
-    print(weatherJsonData);
+    //print(weatherJsonData);
 
     //store data into the variable that holds all of our data from the calls
     jsonDataList[1] = weatherJsonData;
 
-    print("JSONDATALIST : \n" + jsonDataList.length.toString());
+    //rint("JSONDATALIST : \n" + jsonDataList.length.toString());
     return jsonDataList;
   }
 
@@ -63,10 +63,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<dynamic>(
-      future: fetchDataFromApi(widget.data.latitude,
-          widget.data.longitude), // function where you call your api
+      future: fetchDataFromApi(widget.data.latitude, widget.data.longitude),
       builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-        // AsyncSnapshot<Your object type>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return SafeArea(
             child: Scaffold(
@@ -92,8 +90,6 @@ class _WeatherScreenState extends State<WeatherScreen> {
   Widget _buildAppBar() {
     return SliverAppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      //elevation: 5.0,
-      //automaticallyImplyLeading: true,
       leading: new Padding(
         padding: const EdgeInsets.all(8.0),
         child: InkWell(
