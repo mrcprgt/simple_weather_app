@@ -13,16 +13,25 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  //Variables
+  //FormBuilder Key
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
+  //For displaying error banner
   bool error = false;
+
+  //Geolocator
   var geolocator = Geolocator();
+
+  //Storing address from form input
   String address;
+
+  //Storing geocode from address input
   var geocodeFromInput;
+
+  //Store coordinates when using currentlocation
   LatLng currentLocation;
 
-  Future<void> _showMyDialog() async {
+  Future<void> _showUseLocationPrompt() async {
     return showDialog<void>(
       useRootNavigator: true,
       context: context,
@@ -42,10 +51,14 @@ class _HomeState extends State<Home> {
               child: Text('Yes'),
               onPressed: () async {
                 var status = await Permission.location.status;
-                print(status);
+
+                //Check if location perms is undetermined
                 if (status.isUndetermined) {
+                  //Request for location
                   Permission.location.request();
+                  //Disable dialog
                   Navigator.of(context).pop();
+                  //Get current location, store coordinates to variable, send variable to next screen
                   await geolocator
                       .getCurrentPosition()
                       .then((value) => currentLocation =
@@ -53,18 +66,31 @@ class _HomeState extends State<Home> {
                       .then((value) => Navigator.of(context)
                           .pushNamed('/mapscreen', arguments: currentLocation));
                 }
+
+                //Check if location perms is denied
                 if (status.isDenied) {
+                  //Show error banner
                   setState(() {
                     error = true;
                   });
+                  //Remove dialog
                   Navigator.of(context).pop();
                 }
+
+                //If location perms is granted
                 if (status.isGranted) {
+                  //Get current location, store coordinates to variable, send variable to next screen
                   await geolocator.getCurrentPosition().then((value) =>
                       currentLocation =
                           new LatLng(value.latitude, value.longitude));
                   Navigator.of(context)
                       .pushNamed('/mapscreen', arguments: currentLocation);
+                }
+
+                //Check if location perms is permanently denied
+                if (status.isPermanentlyDenied) {
+                  //Open application settings.
+                  openAppSettings();
                 }
               },
             ),
@@ -83,137 +109,137 @@ class _HomeState extends State<Home> {
       child: Scaffold(
         backgroundColor: Colors.blue[100],
         body: Container(
-            padding: EdgeInsets.all(16),
-            height: MediaQuery.of(context).size.height,
-            width: MediaQuery.of(context).size.width,
-            child: SingleChildScrollView(
-              child: FormBuilder(
-                key: _fbKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    error
-                        ? GestureDetector(
-                            onTap: () async {
-                              await Permission.location
-                                  .request()
-                                  .whenComplete(() => setState(() {
-                                        error = false;
-                                      }));
-                            },
-                            child: Card(
-                                margin: EdgeInsets.all(4),
-                                color: Colors.red[300],
-                                child: Text(
-                                    "Location services is required for this app. Tap here to enable.",
-                                    style: TextStyle(
-                                        fontSize: 24, color: Colors.black))),
-                          )
-                        : Container(),
-                    Image.asset('assets/bermuda-searching.png',
-                        width: MediaQuery.of(context).size.width, height: 300),
-                    SizedBox(height: 20),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      margin: EdgeInsets.all(4),
-                      elevation: 10,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: <Widget>[
-                            FormBuilderTextField(
-                              attribute: "brgy",
-                              decoration:
-                                  InputDecoration(labelText: "Barangay"),
-                            ),
-                            FormBuilderTextField(
-                              attribute: "city",
-                              decoration: InputDecoration(labelText: "City"),
-                            ),
-                            FormBuilderTextField(
-                              attribute: "prov",
-                              decoration:
-                                  InputDecoration(labelText: "Province"),
-                            ),
-                          ],
-                        ),
-                      ),
+          padding: EdgeInsets.all(16),
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          child: SingleChildScrollView(
+            child: FormBuilder(
+              key: _fbKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  //Error Banner
+                  error
+                      ? GestureDetector(
+                          onTap: () async {
+                            if (await Permission.location.isPermanentlyDenied) {
+                              openAppSettings();
+                            }
+                            await Permission.location
+                                .request()
+                                .whenComplete(() => setState(() {
+                                      error = !error;
+                                    }));
+                          },
+                          child: Card(
+                              margin: EdgeInsets.all(4),
+                              color: Colors.red[300],
+                              child: Text(
+                                  "Location services is required for this app. Tap here to enable.",
+                                  style: TextStyle(
+                                      fontSize: 24, color: Colors.black))),
+                        )
+                      : Container(),
+                  Image.asset('assets/bermuda-searching.png',
+                      width: MediaQuery.of(context).size.width, height: 300),
+                  SizedBox(height: 20),
+                  _buildInputCard(),
+                  Container(
+                    height: 25,
+                  ),
+                  RaisedButton(
+                    color: Colors.green[400],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
                     ),
-                    Container(
-                      height: 25,
-                    ),
-                    RaisedButton(
-                      color: Colors.green[400],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      elevation: 5,
-                      child: Text("Next"),
-                      onPressed: () async {
-                        _fbKey.currentState.saveAndValidate();
+                    elevation: 5,
+                    child: Text("Next"),
+                    onPressed: () async {
+                      _fbKey.currentState.saveAndValidate();
 
-                        //Combine values from textfields and trim leading whitespace
-                        address = _fbKey.currentState.value["brgy"].trim() +
-                            ", " +
-                            _fbKey.currentState.value["city"].trim() +
-                            ", " +
-                            _fbKey.currentState.value["prov"].trim();
+                      //Combine values from textfields and trim leading whitespace
+                      address = _fbKey.currentState.value["brgy"].trim() +
+                          ", " +
+                          _fbKey.currentState.value["city"].trim() +
+                          ", " +
+                          _fbKey.currentState.value["prov"].trim();
 
-                        print(address);
-                        //  var query =
-                        // "street=$addressSplit[0]&city=$addressSplit[1]&country=philippines";
-                        // var url =
-                        //     'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&$query&format=json';
-                        // var addressSplit = address.split(", ");
-                        //var url =
-                        // 'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&countrycodes=<ISO_3166-2:PH>&format=json';
+                      print(address);
 
-                        //make an http request
-                        var geoCodeQuery =
-                            'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
-                        // var geoCodeQuery =
-                        //     'https://us1.locationiq.com/v1/search.php?key=58c2ebc4fef933&q=$address&format=json';
-                        await pr.show();
+                      //make an http request
+                      var geoCodeQuery =
+                          'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
 
-                        if (pr.isShowing()) {
-                          var response = await http.get(geoCodeQuery);
+                      //show progress dialog now
+                      await pr.show();
 
-                          var jsonData;
-                          jsonData = json.decode(response.body);
+                      if (pr.isShowing()) {
+                        var geoCodeQueryResult = await http.get(geoCodeQuery);
+                        var jsonData = json.decode(geoCodeQueryResult.body);
 
-                          //if len = 1, user input is blank
-                          if (jsonData.length == 1) {
-                            pr.hide();
-                            _showMyDialog();
-                          }
-
-                          //check if the first result is in the philippines
-                          if (jsonData.first["display_name"]
-                                  .contains("Philippines") ==
-                              false) {
-                            pr.hide();
-                            _showMyDialog();
-                          } else {
-                            //If result is valid -> go to map
-                            pr.hide();
-                            geocodeFromInput = new LatLng(
-                                double.parse(jsonData.first["lat"]),
-                                double.parse(jsonData.first["lon"]));
-                            print(geocodeFromInput.toString());
-
-                            Navigator.of(context).pushNamed('/mapscreen',
-                                arguments: geocodeFromInput);
-                          }
+                        //if len = 1, user input is blank
+                        if (jsonData.length == 1) {
+                          pr.hide();
+                          _showUseLocationPrompt();
                         }
-                      },
-                    ),
-                  ],
-                ),
+
+                        //check if result is in the philippines
+                        if (jsonData.first["display_name"]
+                                .contains("Philippines") ==
+                            false) {
+                          pr.hide();
+                          _showUseLocationPrompt();
+                        } else {
+                          //If result is valid -> go to map
+                          pr.hide();
+
+                          //send data to map screen
+                          geocodeFromInput = new LatLng(
+                              double.parse(jsonData.first["lat"]),
+                              double.parse(jsonData.first["lon"]));
+                          // print(geocodeFromInput.toString());
+
+                          Navigator.of(context).pushNamed('/mapscreen',
+                              arguments: geocodeFromInput);
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
-            )),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Card _buildInputCard() {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      margin: EdgeInsets.all(4),
+      elevation: 10,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            FormBuilderTextField(
+              attribute: "brgy",
+              decoration: InputDecoration(labelText: "Barangay"),
+            ),
+            FormBuilderTextField(
+              attribute: "city",
+              decoration: InputDecoration(labelText: "City"),
+            ),
+            FormBuilderTextField(
+              attribute: "prov",
+              decoration: InputDecoration(labelText: "Province"),
+            ),
+          ],
+        ),
       ),
     );
   }
