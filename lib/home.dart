@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -15,17 +16,15 @@ class _HomeState extends State<Home> {
   //Variables
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  var geolocator = Geolocator();
-  List<Marker> markers = [];
 
+  var geolocator = Geolocator();
   String address;
   var geocodeFromInput;
   LatLng currentLocation;
 
-  bool pressed = false;
-
   Future<void> _showMyDialog() async {
     return showDialog<void>(
+      useRootNavigator: true,
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
@@ -74,93 +73,120 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    final ProgressDialog pr = ProgressDialog(context,
+        type: ProgressDialogType.Normal, isDismissible: false, showLogs: false);
+
     return SafeArea(
       child: Scaffold(
         key: _scaffoldKey,
-        appBar: AppBar(
-          title: Text('Simple Weather App'),
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            child: Container(
-                padding: EdgeInsets.all(16),
-                child: FormBuilder(
-                  key: _fbKey,
-                  child: Column(
-                    children: <Widget>[
-                      FormBuilderTextField(
-                        attribute: "brgy",
-                        decoration: InputDecoration(labelText: "Barangay"),
-                      ),
-                      FormBuilderTextField(
-                        attribute: "city",
-                        decoration: InputDecoration(labelText: "City"),
-                      ),
-                      FormBuilderTextField(
-                        attribute: "prov",
-                        decoration: InputDecoration(labelText: "Province"),
-                      ),
-                      MaterialButton(
-                        child: Text("Submit"),
-                        onPressed: () async {
-                          _fbKey.currentState.saveAndValidate();
+        backgroundColor: Colors.blue[100],
+        body: Container(
+            padding: EdgeInsets.all(16),
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            child: SingleChildScrollView(
+              child: FormBuilder(
+                key: _fbKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Image.asset('assets/bermuda-searching.png',
+                        width: MediaQuery.of(context).size.width, height: 300),
+                    SizedBox(height: 20),
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: new BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(),
 
-                          //Combine values from textfields and trim leading whitespace
-                          address = _fbKey.currentState.value["brgy"].trim() +
-                              ", " +
-                              _fbKey.currentState.value["city"].trim() +
-                              ", " +
-                              _fbKey.currentState.value["prov"].trim();
+                        //color: Colors.purple,
+                        // gradient: new LinearGradient(
+                        //   colors: [Colors.blue, Colors.red],
+                        // ),
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          FormBuilderTextField(
+                            attribute: "brgy",
+                            decoration: InputDecoration(labelText: "Barangay"),
+                          ),
+                          FormBuilderTextField(
+                            attribute: "city",
+                            decoration: InputDecoration(labelText: "City"),
+                          ),
+                          FormBuilderTextField(
+                            attribute: "prov",
+                            decoration: InputDecoration(labelText: "Province"),
+                          ),
+                        ],
+                      ),
+                    ),
+                    RaisedButton(
+                      elevation: 2,
+                      child: Text("Next"),
+                      onPressed: () async {
+                        _fbKey.currentState.saveAndValidate();
 
-                          print(address);
-                          // _scaffoldKey.currentState.showSnackBar(new SnackBar(
-                          //   duration: new Duration(seconds: 4),
-                          //   content: new Row(
-                          //     mainAxisAlignment: MainAxisAlignment.start,
-                          //     children: <Widget>[
-                          //       new CircularProgressIndicator(),
-                          //       new Text("Processing Location")
-                          //     ],
-                          //   ),
-                          // ));
-                          //make an http request
-                          var url =
-                              'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
+                        //Combine values from textfields and trim leading whitespace
+                        address = _fbKey.currentState.value["brgy"].trim() +
+                            ", " +
+                            _fbKey.currentState.value["city"].trim() +
+                            ", " +
+                            _fbKey.currentState.value["prov"].trim();
 
-                          var response = await http.get(url);
+                        print(address);
+                        //  var query =
+                        // "street=$addressSplit[0]&city=$addressSplit[1]&country=philippines";
+                        // var url =
+                        //     'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&$query&format=json';
+                        // var addressSplit = address.split(", ");
+                        //var url =
+                        // 'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&countrycodes=<ISO_3166-2:PH>&format=json';
+
+                        //make an http request
+                        var geoCodeQuery =
+                            'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
+                        await pr.show();
+
+                        if (pr.isShowing()) {
+                          var response = await http.get(geoCodeQuery);
 
                           var jsonData;
                           jsonData = json.decode(response.body);
-                          //print("jsonData : " + jsonData.toString());
+                          print(jsonData.first);
 
-                          // if (jsonData.containsKey("error")) {
+                          //if len = 1, user input is blank
                           if (jsonData.length == 1) {
+                            pr.hide();
+                            _showMyDialog();
+                          }
+
+                          //check if the first result is in the philippines
+                          if (jsonData.first["display_name"]
+                                  .contains("Philippines") ==
+                              false) {
+                            pr.hide();
                             _showMyDialog();
                           } else {
+                            //If result is valid -> go to map
+                            pr.hide();
                             geocodeFromInput = new LatLng(
                                 double.parse(jsonData.first["lat"]),
                                 double.parse(jsonData.first["lon"]));
                             print(geocodeFromInput.toString());
 
-                            setState(() {
-                              pressed = true;
-                              markers.add(Marker(
-                                markerId: MarkerId('pinMarker'),
-                                draggable: false,
-                                position: geocodeFromInput,
-                              ));
-                            });
-
                             Navigator.of(context).pushNamed('/mapscreen',
                                 arguments: geocodeFromInput);
                           }
-                        },
-                      ),
-                    ],
-                  ),
-                )),
-          ),
-        ),
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            )),
       ),
     );
   }
