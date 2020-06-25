@@ -46,7 +46,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
     //Store data in a variable and serialize to list
     var weatherJsonData;
     weatherJsonData = json.decode(weatherResponse.body);
-    //print(weatherJsonData);
+    print(weatherJsonData);
 
     //store data into the variable that holds all of our data from the calls
     jsonDataList[1] = weatherJsonData;
@@ -89,7 +89,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
   Widget _buildAppBar() {
     return SliverAppBar(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.green[200],
       leading: new Padding(
         padding: const EdgeInsets.all(8.0),
         child: InkWell(
@@ -112,9 +112,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
             markers: Set.from(markers),
             initialCameraPosition: CameraPosition(
               target: widget.data,
-              zoom: 20,
+              zoom: 15,
             ),
-            zoomControlsEnabled: false,
+            zoomControlsEnabled: true,
           ),
         ),
       ),
@@ -124,6 +124,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
   Widget _buildWeatherDetails() {
     return SliverFillRemaining(
       child: Scaffold(
+        backgroundColor: Colors.blue[50],
         body: Container(
           padding: EdgeInsets.all(8),
           child: Padding(
@@ -132,23 +133,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                Container(
-                  child: Text(
-                    "Today's Forecast",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
-                  ),
-                ),
-                Container(
-                  child: Text(
-                    "You are here : " + jsonDataList[0]["display_name"],
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-                AnimatedOpacity(
-                  opacity: _visible ? 1.0 : 0.0,
-                  duration: Duration(milliseconds: 500),
-                  child: _buildMainWeatherCard(),
-                ),
+                _buildAddressCard(),
+                _buildMainWeatherCard(),
               ],
             ),
           ),
@@ -157,136 +143,174 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
-  Card _buildMainWeatherCard() {
+  Card _buildAddressCard() {
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(35.0),
+      ),
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    Text(
-                      jsonDataList[1]["weather"][0]["main"].toString(),
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      jsonDataList[1]["weather"][0]["description"].toString(),
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ],
-                ),
-                Image.network(checkIcon(jsonDataList))
-              ],
+            Container(
+              child: Text(
+                "Today's Forecast",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  "Temperature",
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  jsonDataList[1]["main"]["temp"].toString() + "°C",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ],
+            Container(
+              child: Text(
+                jsonDataList[0]["display_name"],
+                style: TextStyle(fontSize: 18),
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  "Wind Speed",
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  jsonDataList[1]["wind"]["speed"].toString() + " m/sec",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-            Row(
-              //crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  "Wind Direction",
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  jsonDataList[1]["wind"]["deg"].toString() + " °",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  "Atmospheric Pressure",
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  jsonDataList[1]["main"]["pressure"].toString() + " hPA",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-            jsonDataList[1]["clouds"] != null
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(
-                        "Cloudiness",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      Text(
-                        jsonDataList[1]["clouds"]["all"].toString() + "%",
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  )
-                : Container(),
-            jsonDataList[1]["rain"] != null
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text(
-                        "Rain in last 1 Hour",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      Text(
-                        jsonDataList[1]["rain"]["rain.1h"].toString() + "mm",
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  )
-                : Container(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  "Humidity",
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  jsonDataList[1]["main"]["humidity"].toString() + "%",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ],
-            )
           ],
         ),
       ),
     );
+  }
+
+  Card _buildMainWeatherCard() {
+    return Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(35.0),
+        ),
+        elevation: 4,
+        child: Container(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          jsonDataList[1]["weather"][0]["main"].toString(),
+                          style: TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.w700),
+                        ),
+                        Text(
+                          jsonDataList[1]["weather"][0]["description"]
+                              .toString(),
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Image.network(checkIcon(jsonDataList))
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      "Temperature",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      jsonDataList[1]["main"]["temp"].toString() + "°C",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      "Wind Speed",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      jsonDataList[1]["wind"]["speed"].toString() + " m/sec",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                Row(
+                  //crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      "Wind Direction",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      jsonDataList[1]["wind"]["deg"].toString() + " °",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      "Atmospheric Pressure",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      jsonDataList[1]["main"]["pressure"].toString() + " hPA",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                jsonDataList[1]["clouds"] != null
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            "Cloudiness",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          Text(
+                            jsonDataList[1]["clouds"]["all"].toString() + "%",
+                            style: TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      )
+                    : Container(),
+                jsonDataList[1]["rain"] != null
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            "Rain in last 1 Hour",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          Text(
+                            jsonDataList[1]["rain"]["1h"].toString() + "mm",
+                            style: TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      )
+                    : Container(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      "Humidity",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    Text(
+                      jsonDataList[1]["main"]["humidity"].toString() + "%",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ));
   }
 
   //Check for icons
