@@ -18,10 +18,7 @@ class _HomeState extends State<Home> {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
   //For displaying error banner
-  bool error = false;
-
-  //Geolocator
-  //var geolocator = Geolocator();
+  bool showError;
 
   //Location
   Location location = new Location();
@@ -35,6 +32,11 @@ class _HomeState extends State<Home> {
 
   //Store coordinates when using currentlocation
   LatLng currentLocation;
+  @override
+  void initState() {
+    super.initState();
+    showError = false;
+  }
 
   Future<void> _showUseLocationPrompt(ProgressDialog pr) async {
     return showDialog<void>(
@@ -55,7 +57,7 @@ class _HomeState extends State<Home> {
             FlatButton(
               child: Text('Yes'),
               onPressed: () async {
-                var status = await Permission.location.status;
+                var status = await Permission.location.request();
                 //var gs = await geolocator.checkGeolocationPermissionStatus();
                 _serviceEnabled = await location.serviceEnabled();
                 if (!_serviceEnabled) {
@@ -63,44 +65,11 @@ class _HomeState extends State<Home> {
                   if (!_serviceEnabled) {
                     return;
                   }
-
-                  // );
                 }
-                //Check if location perms is undetermined
-                if (status.isUndetermined) {}
-                //Request for location
-                // await Permission.location.request().whenComplete(
-                // () async =>
-                await pr.show().whenComplete(
-                      () async =>
-                          //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-                          _locationData = (await location
-                              .getLocation()
-                              .then((value) => currentLocation =
-                                  new LatLng(value.latitude, value.longitude))
-                              .whenComplete(() => pr.hide())
-                              .whenComplete(
-                                () => Navigator.of(context).popAndPushNamed(
-                                    '/mapscreen',
-                                    arguments: currentLocation),
-                              )),
-                    );
-                //Check if location perms is denied
-                if (status.isDenied) {
-                  //Show error banner
-                  setState(() {
-                    error = true;
-                  });
-                  //Remove dialog
-                  Navigator.of(context).pop();
-                }
+                print(status);
 
-                //If location perms is granted
+                //await Permission.location.request().then((value) => if(value == PermissionStatus.i))
                 if (status.isGranted) {
-                  //Get current location, store coordinates to variable, send variable to next screen
-                  // await geolocator.getCurrentPosition().then((value) =>
-                  //     currentLocation =
-                  //         new LatLng(value.latitude, value.longitude));
                   await pr.show().whenComplete(
                         () async =>
                             //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
@@ -115,15 +84,82 @@ class _HomeState extends State<Home> {
                                       arguments: currentLocation),
                                 )),
                       );
-                  Navigator.of(context)
-                      .pushNamed('/mapscreen', arguments: currentLocation);
                 }
 
-                //Check if location perms is permanently denied
+                if (status.isDenied) {
+                  setState(() {
+                    showError = true;
+                  });
+                  Navigator.pop(context);
+                }
+
                 if (status.isPermanentlyDenied) {
-                  //Open application settings.
+                  setState(() {
+                    showError = true;
+                  });
                   openAppSettings();
                 }
+                //Check if location perms is undetermined
+                // if (status.isUndetermined) {
+                //   print("undetermined");
+                //   await Permission.location.status
+                //       .then((value) => print(value));
+                //   await pr.show().whenComplete(
+                //         () async =>
+                //             //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+                //             _locationData = (await location
+                //                 .getLocation()
+                //                 .then((value) => currentLocation =
+                //                     new LatLng(value.latitude, value.longitude))
+                //                 .whenComplete(() => pr.hide())
+                //                 .whenComplete(
+                //                   () => Navigator.of(context).popAndPushNamed(
+                //                       '/mapscreen',
+                //                       arguments: currentLocation),
+                //                 )),
+                //       );
+                // }
+                //Request for location
+                // await Permission.location.request().whenComplete(
+                // () async =>
+
+                //If location perms is granted
+                // if (status.isGranted) {
+                //   //Get current location, store coordinates to variable, send variable to next screen
+                //   // await geolocator.getCurrentPosition().then((value) =>
+                //   //     currentLocation =
+                //   //         new LatLng(value.latitude, value.longitude));
+                //   await pr.show().whenComplete(
+                //         () async =>
+                //             //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+                //             _locationData = (await location
+                //                 .getLocation()
+                //                 .then((value) => currentLocation =
+                //                     new LatLng(value.latitude, value.longitude))
+                //                 .whenComplete(() => pr.hide())
+                //                 .whenComplete(
+                //                   () => Navigator.of(context).popAndPushNamed(
+                //                       '/mapscreen',
+                //                       arguments: currentLocation),
+                //                 )),
+                //       );
+                //   Navigator.of(context)
+                //       .pushNamed('/mapscreen', arguments: currentLocation);
+                // }
+
+                // //Check if location perms is permanently denied
+                // if (status.isPermanentlyDenied) {
+                //   //Open application settings.
+                //   openAppSettings();
+                // }
+
+                // //Check if location perms is denied
+                // if (status.isDenied) {
+                //   //Show error banner
+                //   setState(() {
+                //     showError = true;
+                //   });
+                // }
               },
             ),
           ],
@@ -152,7 +188,7 @@ class _HomeState extends State<Home> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   //Error Banner
-                  error
+                  showError
                       ? GestureDetector(
                           onTap: () async {
                             if (await Permission.location.isPermanentlyDenied) {
@@ -161,7 +197,7 @@ class _HomeState extends State<Home> {
                             await Permission.location
                                 .request()
                                 .whenComplete(() => setState(() {
-                                      error = !error;
+                                      showError = !showError;
                                     }));
                           },
                           child: Card(
