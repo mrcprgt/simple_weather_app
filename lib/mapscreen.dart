@@ -40,6 +40,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           child: Icon(Icons.keyboard_arrow_right),
+          backgroundColor: Colors.green[200],
           onPressed: () {
             Navigator.of(context)
                 .pushNamed('/weatherscreen', arguments: widget.data);
