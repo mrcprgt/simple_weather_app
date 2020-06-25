@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:progress_dialog/progress_dialog.dart';
+import 'package:location/location.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -20,8 +21,12 @@ class _HomeState extends State<Home> {
   bool error = false;
 
   //Geolocator
-  var geolocator = Geolocator();
+  //var geolocator = Geolocator();
 
+  //Location
+  Location location = new Location();
+  bool _serviceEnabled;
+  var _locationData;
   //Storing address from form input
   String address;
 
@@ -31,7 +36,7 @@ class _HomeState extends State<Home> {
   //Store coordinates when using currentlocation
   LatLng currentLocation;
 
-  Future<void> _showUseLocationPrompt() async {
+  Future<void> _showUseLocationPrompt(ProgressDialog pr) async {
     return showDialog<void>(
       useRootNavigator: true,
       context: context,
@@ -39,34 +44,47 @@ class _HomeState extends State<Home> {
         return AlertDialog(
           title: Text('Woops!'),
           content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('Can\'t seem to find your location.'),
-                Text('Would you like to use your current location?'),
-              ],
-            ),
-          ),
+              child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('Can\'t seem to find your location.'),
+              Text('Would you like to use your current location?'),
+            ],
+          )),
           actions: <Widget>[
             FlatButton(
               child: Text('Yes'),
               onPressed: () async {
                 var status = await Permission.location.status;
+                //var gs = await geolocator.checkGeolocationPermissionStatus();
+                _serviceEnabled = await location.serviceEnabled();
+                if (!_serviceEnabled) {
+                  _serviceEnabled = await location.requestService();
+                  if (!_serviceEnabled) {
+                    return;
+                  }
 
-                //Check if location perms is undetermined
-                if (status.isUndetermined) {
-                  //Request for location
-                  Permission.location.request();
-                  //Disable dialog
-                  Navigator.of(context).pop();
-                  //Get current location, store coordinates to variable, send variable to next screen
-                  await geolocator
-                      .getCurrentPosition()
-                      .then((value) => currentLocation =
-                          new LatLng(value.latitude, value.longitude))
-                      .then((value) => Navigator.of(context)
-                          .pushNamed('/mapscreen', arguments: currentLocation));
+                  // );
                 }
-
+                //Check if location perms is undetermined
+                if (status.isUndetermined) {}
+                //Request for location
+                // await Permission.location.request().whenComplete(
+                // () async =>
+                await pr.show().whenComplete(
+                      () async =>
+                          //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+                          _locationData = (await location
+                              .getLocation()
+                              .then((value) => currentLocation =
+                                  new LatLng(value.latitude, value.longitude))
+                              .whenComplete(() => pr.hide())
+                              .whenComplete(
+                                () => Navigator.of(context).popAndPushNamed(
+                                    '/mapscreen',
+                                    arguments: currentLocation),
+                              )),
+                    );
                 //Check if location perms is denied
                 if (status.isDenied) {
                   //Show error banner
@@ -80,9 +98,23 @@ class _HomeState extends State<Home> {
                 //If location perms is granted
                 if (status.isGranted) {
                   //Get current location, store coordinates to variable, send variable to next screen
-                  await geolocator.getCurrentPosition().then((value) =>
-                      currentLocation =
-                          new LatLng(value.latitude, value.longitude));
+                  // await geolocator.getCurrentPosition().then((value) =>
+                  //     currentLocation =
+                  //         new LatLng(value.latitude, value.longitude));
+                  await pr.show().whenComplete(
+                        () async =>
+                            //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+                            _locationData = (await location
+                                .getLocation()
+                                .then((value) => currentLocation =
+                                    new LatLng(value.latitude, value.longitude))
+                                .whenComplete(() => pr.hide())
+                                .whenComplete(
+                                  () => Navigator.of(context).popAndPushNamed(
+                                      '/mapscreen',
+                                      arguments: currentLocation),
+                                )),
+                      );
                   Navigator.of(context)
                       .pushNamed('/mapscreen', arguments: currentLocation);
                 }
@@ -181,7 +213,7 @@ class _HomeState extends State<Home> {
                         //if len = 1, user input is blank
                         if (jsonData.length == 1) {
                           pr.hide();
-                          _showUseLocationPrompt();
+                          _showUseLocationPrompt(pr);
                         }
 
                         //check if result is in the philippines
@@ -189,7 +221,7 @@ class _HomeState extends State<Home> {
                                 .contains("Philippines") ==
                             false) {
                           pr.hide();
-                          _showUseLocationPrompt();
+                          _showUseLocationPrompt(pr);
                         } else {
                           //If result is valid -> go to map
                           pr.hide();
