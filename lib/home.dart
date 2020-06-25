@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -13,7 +12,7 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with TickerProviderStateMixin {
   //FormBuilder Key
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
 
@@ -58,31 +57,29 @@ class _HomeState extends State<Home> {
               child: Text('Yes'),
               onPressed: () async {
                 var status = await Permission.location.request();
-                //var gs = await geolocator.checkGeolocationPermissionStatus();
-                _serviceEnabled = await location.serviceEnabled();
-                if (!_serviceEnabled) {
-                  _serviceEnabled = await location.requestService();
-                  if (!_serviceEnabled) {
-                    return;
-                  }
-                }
+
                 print(status);
 
-                //await Permission.location.request().then((value) => if(value == PermissionStatus.i))
                 if (status.isGranted) {
+                  //Request for location service
+                  _serviceEnabled = await location.serviceEnabled();
+                  if (!_serviceEnabled) {
+                    _serviceEnabled = await location.requestService();
+                    if (!_serviceEnabled) {
+                      return;
+                    }
+                  }
                   await pr.show().whenComplete(
-                        () async =>
-                            //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-                            _locationData = (await location
-                                .getLocation()
-                                .then((value) => currentLocation =
-                                    new LatLng(value.latitude, value.longitude))
-                                .whenComplete(() => pr.hide())
-                                .whenComplete(
-                                  () => Navigator.of(context).popAndPushNamed(
-                                      '/mapscreen',
-                                      arguments: currentLocation),
-                                )),
+                        () async => _locationData = (await location
+                            .getLocation()
+                            .then((value) => currentLocation =
+                                new LatLng(value.latitude, value.longitude))
+                            .whenComplete(() => pr.hide())
+                            .whenComplete(
+                              () => Navigator.of(context).popAndPushNamed(
+                                  '/mapscreen',
+                                  arguments: currentLocation),
+                            )),
                       );
                 }
 
@@ -99,67 +96,6 @@ class _HomeState extends State<Home> {
                   });
                   openAppSettings();
                 }
-                //Check if location perms is undetermined
-                // if (status.isUndetermined) {
-                //   print("undetermined");
-                //   await Permission.location.status
-                //       .then((value) => print(value));
-                //   await pr.show().whenComplete(
-                //         () async =>
-                //             //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-                //             _locationData = (await location
-                //                 .getLocation()
-                //                 .then((value) => currentLocation =
-                //                     new LatLng(value.latitude, value.longitude))
-                //                 .whenComplete(() => pr.hide())
-                //                 .whenComplete(
-                //                   () => Navigator.of(context).popAndPushNamed(
-                //                       '/mapscreen',
-                //                       arguments: currentLocation),
-                //                 )),
-                //       );
-                // }
-                //Request for location
-                // await Permission.location.request().whenComplete(
-                // () async =>
-
-                //If location perms is granted
-                // if (status.isGranted) {
-                //   //Get current location, store coordinates to variable, send variable to next screen
-                //   // await geolocator.getCurrentPosition().then((value) =>
-                //   //     currentLocation =
-                //   //         new LatLng(value.latitude, value.longitude));
-                //   await pr.show().whenComplete(
-                //         () async =>
-                //             //geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
-                //             _locationData = (await location
-                //                 .getLocation()
-                //                 .then((value) => currentLocation =
-                //                     new LatLng(value.latitude, value.longitude))
-                //                 .whenComplete(() => pr.hide())
-                //                 .whenComplete(
-                //                   () => Navigator.of(context).popAndPushNamed(
-                //                       '/mapscreen',
-                //                       arguments: currentLocation),
-                //                 )),
-                //       );
-                //   Navigator.of(context)
-                //       .pushNamed('/mapscreen', arguments: currentLocation);
-                // }
-
-                // //Check if location perms is permanently denied
-                // if (status.isPermanentlyDenied) {
-                //   //Open application settings.
-                //   openAppSettings();
-                // }
-
-                // //Check if location perms is denied
-                // if (status.isDenied) {
-                //   //Show error banner
-                //   setState(() {
-                //     showError = true;
-                //   });
-                // }
               },
             ),
           ],
@@ -206,73 +142,82 @@ class _HomeState extends State<Home> {
                               child: Text(
                                   "Location services is required for this app. Tap here to enable.",
                                   style: TextStyle(
-                                      fontSize: 24, color: Colors.black))),
+                                      fontSize: 24,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w800))),
                         )
                       : Container(),
+                  Text(
+                    "A Simple Weather App",
+                    style: TextStyle(fontSize: 32),
+                  ),
                   Image.asset('assets/bermuda-searching.png',
                       width: MediaQuery.of(context).size.width, height: 300),
                   SizedBox(height: 20),
                   _buildInputCard(),
-                  Container(
-                    height: 25,
+                  SizedBox(
+                    height: 15,
                   ),
-                  RaisedButton(
-                    color: Colors.green[400],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.0),
+                  ButtonTheme(
+                    minWidth: double.infinity,
+                    child: RaisedButton(
+                      color: Colors.green[200],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      elevation: 5,
+                      child: Text("Next"),
+                      onPressed: () async {
+                        _fbKey.currentState.saveAndValidate();
+
+                        //Combine values from textfields and trim leading whitespace
+                        address = _fbKey.currentState.value["brgy"].trim() +
+                            ", " +
+                            _fbKey.currentState.value["city"].trim() +
+                            ", " +
+                            _fbKey.currentState.value["prov"].trim();
+
+                        print(address);
+
+                        //make an http request
+                        var geoCodeQuery =
+                            'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
+
+                        //show progress dialog now
+                        await pr.show();
+
+                        if (pr.isShowing()) {
+                          var geoCodeQueryResult = await http.get(geoCodeQuery);
+                          var jsonData = json.decode(geoCodeQueryResult.body);
+
+                          //if len = 1, user input is blank
+                          if (jsonData.length == 1) {
+                            pr.hide();
+                            _showUseLocationPrompt(pr);
+                          }
+
+                          //check if result is in the philippines
+                          if (jsonData.first["display_name"]
+                                  .contains("Philippines") ==
+                              false) {
+                            pr.hide();
+                            _showUseLocationPrompt(pr);
+                          } else {
+                            //If result is valid -> go to map
+                            pr.hide();
+
+                            //send data to map screen
+                            geocodeFromInput = new LatLng(
+                                double.parse(jsonData.first["lat"]),
+                                double.parse(jsonData.first["lon"]));
+                            // print(geocodeFromInput.toString());
+
+                            Navigator.of(context).pushNamed('/mapscreen',
+                                arguments: geocodeFromInput);
+                          }
+                        }
+                      },
                     ),
-                    elevation: 5,
-                    child: Text("Next"),
-                    onPressed: () async {
-                      _fbKey.currentState.saveAndValidate();
-
-                      //Combine values from textfields and trim leading whitespace
-                      address = _fbKey.currentState.value["brgy"].trim() +
-                          ", " +
-                          _fbKey.currentState.value["city"].trim() +
-                          ", " +
-                          _fbKey.currentState.value["prov"].trim();
-
-                      print(address);
-
-                      //make an http request
-                      var geoCodeQuery =
-                          'https://us1.locationiq.com/v1/search.php?key=pk.03ce5820ab6a126c25d2e02370c966fd&q=$address&format=json';
-
-                      //show progress dialog now
-                      await pr.show();
-
-                      if (pr.isShowing()) {
-                        var geoCodeQueryResult = await http.get(geoCodeQuery);
-                        var jsonData = json.decode(geoCodeQueryResult.body);
-
-                        //if len = 1, user input is blank
-                        if (jsonData.length == 1) {
-                          pr.hide();
-                          _showUseLocationPrompt(pr);
-                        }
-
-                        //check if result is in the philippines
-                        if (jsonData.first["display_name"]
-                                .contains("Philippines") ==
-                            false) {
-                          pr.hide();
-                          _showUseLocationPrompt(pr);
-                        } else {
-                          //If result is valid -> go to map
-                          pr.hide();
-
-                          //send data to map screen
-                          geocodeFromInput = new LatLng(
-                              double.parse(jsonData.first["lat"]),
-                              double.parse(jsonData.first["lon"]));
-                          // print(geocodeFromInput.toString());
-
-                          Navigator.of(context).pushNamed('/mapscreen',
-                              arguments: geocodeFromInput);
-                        }
-                      }
-                    },
                   ),
                 ],
               ),
